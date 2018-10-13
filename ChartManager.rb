@@ -15,8 +15,8 @@ attr_accessor :logger
 @@weakness_chart_file = 'Charts/weakness_chart.json'
 @@breakable_chart_file = 'Charts/breakable_chart.json'
 
-def initialize
-    @logger ||= Logger.new(STDOUT)
+def initialize(log)
+    @logger ||= log
     if File.file?(@@weakness_chart_file) && File.file?(@@breakable_chart_file)
        logger.info( "Charts exist. Loading...")
         @@charts_exist = true
@@ -27,6 +27,7 @@ def initialize
        logger.info( "Charts not found. Creating charts.")
         create_charts
        logger.info( "Charts created. Saving charts.")
+       Dir.mkdir('Charts') unless Dir.exist?('Charts')
         filemanager = JsonFileManager.new
         filemanager.write_json_file(@@weakness_chart_file, @@weakness_chart)
         filemanager.write_json_file(@@breakable_chart_file, @@breakable_chart)
@@ -71,7 +72,7 @@ def create_weakness_chart
                logger.info( "Done creating breakable chart.")
                 return
             end
-            @@weakness_chart[table_row_header_container[i].text] << table_rows_container[@@j].children[k].text
+            @@weakness_chart[table_row_header_container[i].text.downcase] << table_rows_container[@@j].children[k].text.downcase.gsub(/\s/,'').gsub('-','')
             i += 1
             k += 1
         end
@@ -89,7 +90,7 @@ def create_breakable_chart
             if table_rows_container[k].children[i].text == "\n"
                 k += 1
             end
-            @@breakable_chart[i] << table_rows_container[@@j].children[k].text
+            @@breakable_chart[i] << table_rows_container[@@j].children[k].text.downcase
             i += 1
             k += 1
         end
