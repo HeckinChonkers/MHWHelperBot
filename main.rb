@@ -14,17 +14,33 @@ info_hash = json_file_manager.load_json_file("info.json")
 chart_manager = ChartManager.new(@logger)
 @weakness_chart = chart_manager.get_weakness_chart
 @breakable_chart = chart_manager.get_breakable_chart
-
+@voice_bot = nil
 bot = Discordrb::Commands::CommandBot.new token: info_hash['token'], client_id: 498586278951124992, prefix: '!'
 
 bot.command(:connect) do |event|
-  bot.voice_connect(@voice_channel_id)
+  @voice_bot = bot.voice_connect(@voice_channel_id)
   'Connected to voice channel'
 end
 
 bot.message(containing: ['devil', 'Devil', 'deviljho', 'Deviljho']) do |event|
-  voice_bot = event.voice
-  voice_bot.play_file('Content/deviljhotheme.mp3')
+ event.respond 'Devil...?!' 
+ @voice_bot.play_file('./Content/deviljhotheme.mp3')
+end
+
+bot.command(:stopsound) do |event|
+  @voice_bot.stop_playing
+end
+
+#TODO: Add watch your profamity
+
+bot.message(containing: ['oz', 'Oz', 'Osborne', 'osborne']) do |event|
+  event.respond 'You just had to bring him up.'
+  #@voice_bot.play_file('./Content/osborne.mp3')
+end
+
+bot.message(containing: ['wow', 'Wow', 'WOW']) do |event|
+  event.respond 'OH WOW'
+  @voice_bot.play_file('./Content/wow.mp3')
 end
 
 bot.message(containing: ['jager', 'JAGER', 'Jager']) do |event|
@@ -33,6 +49,22 @@ bot.message(containing: ['jager', 'JAGER', 'Jager']) do |event|
 end
 
 bot.command(:answer) do |event, match_index|
+  perform_answer(event, match_index)
+end
+
+bot.command(:a) do |event, match_index|
+  perform_answer(event, match_index)
+end
+
+bot.command(:g) do |event, monster_name|
+  event.respond get_weakness_table(monster_name.downcase)
+end
+
+bot.command(:guide) do |event, monster_name|
+  event.respond get_weakness_table(monster_name.downcase)
+end
+
+def perform_answer(event, match_index)
   if @expecting_response
     result_index= match_index.to_i
     result = get_weakness_table(@name_matches[result_index - 1])
@@ -40,10 +72,6 @@ bot.command(:answer) do |event, match_index|
     @name_matches = ''
     event.respond result
   end
-end
-
-bot.command(:guide) do |event, monster_name|
-  event.respond get_weakness_table(monster_name.downcase)
 end
 
 def get_weakness_table(monster_name)
