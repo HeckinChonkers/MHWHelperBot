@@ -1,4 +1,3 @@
-::RBNACL_LIBSODIUM_GEM_LIB_PATH = "C:\\Libsodium\\Win32\\Release\\v120\\dynamic\\libsodium.dll"
 require 'discordrb'
 require 'json'
 require 'logger'
@@ -9,6 +8,7 @@ require_relative 'JsonFileManager.rb'
 @expecting_response = false
 @name_matches = ''
 @channel_id = 414915330419195917
+@voice_channel_id = 414915330419195919
 json_file_manager = JsonFileManager.new
 info_hash = json_file_manager.load_json_file("info.json")
 chart_manager = ChartManager.new(@logger)
@@ -17,8 +17,19 @@ chart_manager = ChartManager.new(@logger)
 
 bot = Discordrb::Commands::CommandBot.new token: info_hash['token'], client_id: 498586278951124992, prefix: '!'
 
-bot.message(with_text: 'Ping') do |event|
-  event.respond 'Pong'
+bot.command(:connect) do |event|
+  bot.voice_connect(@voice_channel_id)
+  'Connected to voice channel'
+end
+
+bot.message(containing: ['devil', 'Devil', 'deviljho', 'Deviljho']) do |event|
+  voice_bot = event.voice
+  voice_bot.play_file('Content/deviljhotheme.mp3')
+end
+
+bot.message(containing: ['jager', 'JAGER', 'Jager']) do |event|
+  event.respond 'Did someone say JAGER?'
+  event.respond 'WOOOOOOOOOOOO!!!!!!'
 end
 
 bot.command(:answer) do |event, match_index|
@@ -32,7 +43,7 @@ bot.command(:answer) do |event, match_index|
 end
 
 bot.command(:guide) do |event, monster_name|
-  event.respond get_weakness_table(monster_name)
+  event.respond get_weakness_table(monster_name.downcase)
 end
 
 def get_weakness_table(monster_name)
