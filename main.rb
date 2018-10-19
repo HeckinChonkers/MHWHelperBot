@@ -15,6 +15,7 @@ chart_manager = ChartManager.new(@logger)
 @weakness_chart = chart_manager.get_weakness_chart
 @breakable_chart = chart_manager.get_breakable_chart
 @voice_bot = nil
+@actual_monster_name = ""
 bot = Discordrb::Commands::CommandBot.new token: info_hash['token'], client_id: 498586278951124992, prefix: '!'
 
 bot.command(:connect) do |event|
@@ -31,7 +32,9 @@ bot.command(:stopsound) do |event|
   @voice_bot.stop_playing
 end
 
-#TODO: Add watch your profamity
+bot.message(containing: info_hash['curses']) do |event|
+  @voice_bot.play_file('./Content/profamity.mp3')
+end
 
 bot.message(containing: ['oz', 'Oz', 'Osborne', 'osborne']) do |event|
   event.respond 'You just had to bring him up.'
@@ -48,6 +51,22 @@ bot.message(containing: ['jager', 'JAGER', 'Jager']) do |event|
   event.respond 'WOOOOOOOOOOOO!!!!!!'
 end
 
+bot.message(containing: ['purse', 'Purse', 'PURSE']) do |event|
+  @voice_bot.play_file('./Content/purse.mp3')
+end
+
+bot.message(containing: ['sucks', 'Sucks', 'SUCKS']) do |event|
+  @voice_bot.play_file('./Content/sucks.mp3')
+end
+
+bot.message(containing: ['do it', 'DO IT', 'Do it', 'Do It']) do |event|
+  @voice_bot.play_file('./Content/doit.mp3')
+end
+
+bot.message(containing: ['bee', 'BEE', 'Bee']) do |event|
+  @voice_bot.play_file('./Content/influxofbees.mp3')
+end
+
 bot.command(:answer) do |event, match_index|
   perform_answer(event, match_index)
 end
@@ -58,10 +77,16 @@ end
 
 bot.command(:g) do |event, monster_name|
   event.respond get_weakness_table(monster_name.downcase)
+  if !@expecting_response
+    event.respond get_breakable_table(monster_name.downcase)
+  end
 end
 
 bot.command(:guide) do |event, monster_name|
   event.respond get_weakness_table(monster_name.downcase)
+  if !@expecting_response
+    event.respond get_breakable_table(monster_name.downcase)
+  end
 end
 
 def perform_answer(event, match_index)
@@ -94,10 +119,36 @@ def get_weakness_table(monster_name)
       end
       rows << [item[0].capitalize, item[1][index_of_monster].capitalize]
     end
-    table = create_ascii_table(@weakness_chart['monster'][index_of_monster].capitalize, rows)
+    @actual_monster_name = @weakness_chart['monster'][index_of_monster]
+    table = create_weakness_ascii_table(@weakness_chart['monster'][index_of_monster].capitalize, rows)
   else
     return "Cannot find monster name that matches #{monster_name}, ya bish."
   end
+end
+
+def get_breakable_table(monster_name)
+  rows = []
+  indexes_of_matches = @breakable_chart["0"].each_index.select{|i| @breakable_chart["0"][i] == @actual_monster_name}
+  if indexes_of_matches
+    indexes_of_matches.each do |index|
+      resulting_row = "`"
+      for item in 1..@breakable_chart.count
+        if item == 1
+          resulting_row += @breakable_chart["#{index}"][item] + ":`\r\n"
+          next
+        end
+        if @breakable_chart["#{index}"][item]
+          resulting_row += "`\t" + @breakable_chart["#{index}"][item] + "`\r\n"
+        end
+      end
+    rows << resulting_row
+    end
+  else
+    return "Cannot find monster name that matches #{monster_name}, ya bish."
+  end
+  table = create_breakable_ascii_table("Vulnerable #{@actual_monster_name.capitalize} Parts", rows)
+  @actual_monster_name = ""
+  return table
 end
 
 bot.command(:exit, help_available: false) do |event|
@@ -109,7 +160,7 @@ bot.command(:exit, help_available: false) do |event|
   exit
 end
 
-def create_ascii_table(title, rows)
+def create_weakness_ascii_table(title, rows)
   table = "`" + title + "`\r\n`------------------------`\r\n"
   max_length = 0
   rows.each do |row|
@@ -120,6 +171,14 @@ def create_ascii_table(title, rows)
   max_length += 5
   rows.each do |row|
     table << "`" + row[0] + " " * (max_length - row[0].length) + row[1] + "`\r\n"
+  end
+  return table
+end
+
+def create_breakable_ascii_table(title, rows)
+  table = "`" + title + "`\r\n`------------------------------------`\r\n"
+  rows.each do |row|
+    table << row
   end
   return table
 end

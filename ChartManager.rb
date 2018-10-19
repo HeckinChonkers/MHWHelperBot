@@ -90,7 +90,7 @@ def create_breakable_chart
             if table_rows_container[k].children[i].text == "\n"
                 k += 1
             end
-            @@breakable_chart[i] << table_rows_container[@@j].children[k].text.downcase
+            @@breakable_chart[i] << table_rows_container[@@j].children[k].text.downcase.gsub(/\s/, '').gsub('-','')
             i += 1
             k += 1
         end
