@@ -76,26 +76,36 @@ bot.command(:a) do |event, match_index|
 end
 
 bot.command(:g) do |event, monster_name|
+  @expecting_response = false
   event.respond get_weakness_table(monster_name.downcase)
-  if !@expecting_response
-    event.respond get_breakable_table(monster_name.downcase)
+  breakable =  get_breakable_table(monster_name.downcase)
+  if breakable and breakable != ""
+    event.respond breakable
   end
 end
 
 bot.command(:guide) do |event, monster_name|
+  @expecting_response = false
   event.respond get_weakness_table(monster_name.downcase)
   if !@expecting_response
-    event.respond get_breakable_table(monster_name.downcase)
-  end
+    breakable =  get_breakable_table(monster_name.downcase)
+    if breakable and breakable != ""
+      event.respond breakable
+    end
+    end
 end
 
 def perform_answer(event, match_index)
   if @expecting_response
     result_index= match_index.to_i
     result = get_weakness_table(@name_matches[result_index - 1])
+    breakable = get_breakable_table(@name_matches[result_index - 1])
     @expecting_response = false
     @name_matches = ''
     event.respond result
+    if breakable and breakable != ""
+      event.respond breakable
+    end
   end
 end
 
@@ -129,26 +139,29 @@ end
 def get_breakable_table(monster_name)
   rows = []
   indexes_of_matches = @breakable_chart["0"].each_index.select{|i| @breakable_chart["0"][i] == @actual_monster_name}
-  if indexes_of_matches
+  if indexes_of_matches and indexes_of_matches.count > 0
     indexes_of_matches.each do |index|
-      resulting_row = "`"
-      for item in 1..@breakable_chart.count
+      resulting_row = ""
+      (1..@breakable_chart.count - 1).each do |item|
         if item == 1
-          resulting_row += @breakable_chart["#{index}"][item] + ":`\r\n"
+          resulting_row += @breakable_chart["#{item}"][index] + ":\r\n"
           next
         end
-        if @breakable_chart["#{index}"][item]
-          resulting_row += "`\t" + @breakable_chart["#{index}"][item] + "`\r\n"
+        if @breakable_chart["#{item}"][index] and @breakable_chart["#{item}"][index] != ""
+          resulting_row += @breakable_chart["#{item}"][index] + ", "
         end
       end
+      resulting_row.chomp!(", ")
+      resulting_row += "\r\n"
     rows << resulting_row
     end
+    table = create_breakable_ascii_table("Vulnerable #{@actual_monster_name.capitalize} Parts", rows)
+    @actual_monster_name = ""
+    return table
   else
-    return "Cannot find monster name that matches #{monster_name}, ya bish."
+    @actual_monster_name = ""
+    return
   end
-  table = create_breakable_ascii_table("Vulnerable #{@actual_monster_name.capitalize} Parts", rows)
-  @actual_monster_name = ""
-  return table
 end
 
 bot.command(:exit, help_available: false) do |event|
@@ -161,7 +174,7 @@ bot.command(:exit, help_available: false) do |event|
 end
 
 def create_weakness_ascii_table(title, rows)
-  table = "`" + title + "`\r\n`------------------------`\r\n"
+  table = "```\r\n" + title + "\r\n------------------------\r\n"
   max_length = 0
   rows.each do |row|
     if max_length < row[0].length
@@ -170,16 +183,18 @@ def create_weakness_ascii_table(title, rows)
   end
   max_length += 5
   rows.each do |row|
-    table << "`" + row[0] + " " * (max_length - row[0].length) + row[1] + "`\r\n"
+    table << row[0] + " " * (max_length - row[0].length) + row[1] + "\r\n"
   end
+  table += "```"
   return table
 end
 
 def create_breakable_ascii_table(title, rows)
-  table = "`" + title + "`\r\n`------------------------------------`\r\n"
+  table = "```" + title + "\r\n------------------------------------\r\n"
   rows.each do |row|
     table << row
   end
+  table += "```"
   return table
 end
 

@@ -41,6 +41,7 @@ def create_charts
     @num_of_columns = table_row_header_container.children.length
     @num_of_rows = table_rows_container.length
     create_weakness_chart
+    create_breakable_chart
 end
 
 def get_weakness_chart
